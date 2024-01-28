@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id         String    @id @db.Uuid
+  name       String
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  teams      Team[]
+}
+
+model Team {
+  id            String            @id @db.Uuid
+  name          String
+  contactNumber String
+  roleId        String            @map(name: "dbRoleId") @db.Uuid
+  userRole      Role              @relation(fields: [roleId], references: [id])
+  dob           DateTime
+  rewardPoints  Int
+  created_at    DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  bookings      ServiceBookings[]
+}
+
+model Package {
+  id         String            @id @db.Uuid
+  name       String
+  price      Int
+  created_at DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  addons     Addons[]
+  bookings   ServiceBookings[]
+}
+
+model Addons {
+  id          String            @id @db.Uuid
+  name        String
+  packageId   String            @map(name: "packageId") @db.Uuid
+  userPackage Package           @relation(fields: [packageId], references: [id])
+  price       Int
+  created_at  DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  bookings    ServiceBookings[]
+}
+
+model Garage {
+  id         String            @id @db.Uuid
+  name       String
+  location   String
+  pincode    Int
+  incharge   String
+  created_at DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  bookings   ServiceBookings[]
+}
+
+model Customer {
+  id            String            @id @db.Uuid
+  name          String
+  email         String
+  phoneNumber   String
+  licence       String
+  pincode       String
+  gst           String
+  address       String
+  notifications String
+  created_at    DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  vehicles      Vehicle[]
+  bookings      ServiceBookings[]
+  customerVoice CustomerVoice[]
+}
+
+model Vehicle {
+  id                    String            @id @db.Uuid
+  customerId            String            @map(name: "customerId") @db.Uuid
+  CusromerInfo          Customer          @relation(fields: [customerId], references: [id])
+  registration          String
+  model                 String
+  last_service_date     DateTime
+  next_service_date     DateTime
+  insurance_expiry_date DateTime
+  emission_expiry_date  DateTime
+  odo_reading           Int
+  created_at            DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  bookings              ServiceBookings[]
+}
+
+model ServiceBookings {
+  id                  String    @id @db.Uuid
+  garage_id           String    @map(name: "garageId") @db.Uuid
+  garageBookings      Garage    @relation(fields: [garage_id], references: [id])
+  customerId          String    @map(name: "customerId") @db.Uuid
+  CusromerInfo        Customer  @relation(fields: [customerId], references: [id])
+  addonsId            String    @map(name: "addonId") @db.Uuid
+  addOnsinfo          Addons    @relation(fields: [addonsId], references: [id])
+  packageId           String    @map(name: "packageId") @db.Uuid
+  packageInfo         Package   @relation(fields: [packageId], references: [id])
+  vehicleId           String    @map(name: "vehicleId") @db.Uuid
+  vehicleInfo         Vehicle   @relation(fields: [vehicleId], references: [id])
+  service_status      Int
+  checklist_status    Int
+  technician_id       String    @map(name: "technicianId") @db.Uuid
+  technicianInfo      Team      @relation(fields: [technician_id], references: [id])
+  start_time          String
+  end_time            String
+  technician_feedback String
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+}
+
+model CustomerVoice {
+  id           String    @id @db.Uuid
+  booking_id   String    @map(name: "bookingId") @db.Uuid
+  customerId   String    @map(name: "customerId") @db.Uuid
+  CusromerInfo Customer  @relation(fields: [customerId], references: [id])
+  voice        String
+  priority     String
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+}
+
+model QuickOptions {
+  id String @id @db.Uuid
+  name       String
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+}
