@@ -7,7 +7,6 @@ const app = express();
 const prisma = new PrismaClient();
 app.use(express.json()); // Add this line to parse JSON requests
 
-
 app.use('/v1/technician', technicianRoutes);
 
 // Attempt to connect to the database

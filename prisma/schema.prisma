@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -41,14 +39,15 @@ model Package {
 }
 
 model Addons {
-  id          String            @id @db.Uuid
-  name        String
+  id         String            @id @db.Uuid
+  name       String
   // packageId   String            @map(name: "packageId") @db.Uuid
   // userPackage Package           @relation(fields: [packageId], references: [id])
-  price       Int
-  created_at  DateTime?         @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
-  bookings    ServiceBookings[]
+  price      Int
+  created_at DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  // bookings    ServiceBookings[]
+  bookings   ServiceBookings[] @relation("ServiceBookingsToAddons")
 }
 
 model Garage {
@@ -97,12 +96,13 @@ model Vehicle {
 
 model ServiceBookings {
   id                  String    @id @db.Uuid
-  garage_id           String    @map(name: "garageId") @db.Uuid
-  garageBookings      Garage    @relation(fields: [garage_id], references: [id])
+  garageId            String    @map(name: "garageId") @db.Uuid
+  garageBookings      Garage    @relation(fields: [garageId], references: [id])
   customerId          String    @map(name: "customerId") @db.Uuid
-  CusromerInfo        Customer  @relation(fields: [customerId], references: [id])
-  addonsId            String    @map(name: "addonId") @db.Uuid
-  addOnsinfo          Addons    @relation(fields: [addonsId], references: [id])
+  CustomerInfo        Customer  @relation(fields: [customerId], references: [id])
+  addonId             String[]  @map(name: "addonId") @db.Uuid
+  // addOnsinfo          Addons[]   @relation("ServiceBookingsToAddons", fields: [addonsId], references: [id])
+  addons              Addons[]  @relation("ServiceBookingsToAddons")
   packageId           String    @map(name: "packageId") @db.Uuid
   packageInfo         Package   @relation(fields: [packageId], references: [id])
   vehicleId           String    @map(name: "vehicleId") @db.Uuid
@@ -130,7 +130,7 @@ model CustomerVoice {
 }
 
 model QuickOptions {
-  id String @id @db.Uuid
+  id         String    @id @db.Uuid
   name       String
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
