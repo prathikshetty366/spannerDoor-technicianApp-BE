@@ -1,11 +1,18 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const technicianRoutes = require('./src/routes/bookingRoutes');
+const cors = require('cors');
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  optionsSuccessStatus: 204,
+};
 
 
 const app = express();
 const prisma = new PrismaClient();
 app.use(express.json()); // Add this line to parse JSON requests
+app.use(cors(corsOptions));
 
 app.use('/v1/technician', technicianRoutes);
 

@@ -134,7 +134,7 @@ async function createRole(req, res) {
       });
   
       if (existingCustomer) {
-        return res.status(409).json({ error: 'Customer with this phone number already exists.' });
+        return res.status(409).json({ error: 'Customer with this phone number already exists.', errorCreating: true });
       }
   
       // Generate a new UUID for the id field
@@ -158,33 +158,25 @@ async function createRole(req, res) {
       res.status(201).json(newCustomer);
     } catch (error) {
       console.error('Error creating customer:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error', errorCreating: true });
     }
   }
   
 async function getCustomerDetails(req, res) {
   try {
-    const { phoneNumber, name } = req.query;
+    const { phoneNumber } = req.query;
 
     let customerDetails;
 
+
     if (phoneNumber) {
-      // Fetch customer details based on phone number
-      customerDetails = await prisma.customer.findFirst({
+      // Fetch customer details based on partial name or phone number
+      customerDetails = await prisma.customer.findMany({
         where: {
-          phoneNumber: phoneNumber,
-        },
-        include: {
-          vehicles: true,
-          bookings: true,
-          customerVoice: true,
-        },
-      });
-    } else if (name) {
-      // Fetch customer details based on name
-      customerDetails = await prisma.customer.findFirst({
-        where: {
-          name: name,
+          OR: [
+            { phoneNumber: { contains: phoneNumber } },
+            { name: { contains: phoneNumber } },
+          ],
         },
         include: {
           vehicles: true,
@@ -193,18 +185,73 @@ async function getCustomerDetails(req, res) {
         },
       });
     } else {
-      return res.status(400).json({ error: 'Please provide either phoneNumber or name in the query parameters' });
+      return res.status(400).json({ error: 'Please provide searchTerm in the query parameters' });
     }
 
-    if (!customerDetails) {
+    if (!customerDetails || customerDetails.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
+
     res.status(200).json(customerDetails);
   } catch (error) {
     console.error('Error fetching customer details:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+async function updateCustomerDetails(req, res) {
+  try {
+    const customerId = req.query.id;
+    const updatedFields = req.body; // Fields to be updated sent by the client
+
+    // Check if the customer exists
+    const existingCustomer = await prisma.customer.findUnique({
+      where: {
+        id: customerId,
+      },
+    });
+
+    if (!existingCustomer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    // Check if the provided phone number already exists for a different user
+    const differentUserExist = await prisma.customer.findFirst({
+      where: {
+        phoneNumber: updatedFields.phoneNumber,
+        id: { not: customerId }, // Exclude the current customer from the search
+      },
+    });
+
+    if (differentUserExist) {
+      return res.status(400).json({ error: 'Number you\'re trying to update already exists for a different user', userExist: true });
+    }
+
+    // Update only the fields sent by the client
+    const updatedCustomer = await prisma.customer.update({
+      where: {
+        id: customerId,
+      },
+      data: {
+        ...existingCustomer,
+        ...updatedFields,
+        updated_at: new Date(),
+      },
+      include: {
+        vehicles: true,
+        bookings: true,
+        customerVoice: true,
+      },
+    });
+
+    res.status(200).json(updatedCustomer);
+  } catch (error) {
+    console.error('Error updating customer details:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+
 async function createVehicle(req, res) {
   try {
     const { customerId, registration, model, last_service_date, next_service_date, insurance_expiry_date, emission_expiry_date, odo_reading } = req.body;
@@ -270,7 +317,7 @@ async function getVehicleByRegistration(req, res) {
 async function createBooking(req, res) {
   try {
     const {
-      garage_id,
+      garageId,
       customerId,
       addonIds,
       packageId,
@@ -281,12 +328,10 @@ async function createBooking(req, res) {
       technician_feedback,
     } = req.body;
 
-    console.log(addonIds,"ids")
     // Check if Garage with given ID exists
     const garageExists = await prisma.garage.findUnique({
-      where: { id: garage_id },
+      where: { id: garageId },
     });
-    console.log(garageExists,"garage")
     if (!garageExists) {
       return res.status(404).json({ error: 'Garage not found' });
     }
@@ -338,7 +383,7 @@ async function createBooking(req, res) {
     const newBooking = await prisma.serviceBookings.create({
       data: {
         id: bookingId,
-        garageId: garage_id,
+        garageId: garageId,
         customerId: customerId,
         addonId: { connect: addonIds.map((addonId) => ({ id: addonId })) },
         packageId: packageId,
@@ -351,7 +396,7 @@ async function createBooking(req, res) {
         checklist_status: 0,
         garageBookings: {
           connect: {
-            id: garage_id,
+            id: garageId,
           },
         },
         CustomerInfo: {
@@ -395,5 +440,6 @@ async function createBooking(req, res) {
     getCustomerDetails,
     createVehicle,
     getVehicleByRegistration,
-    createBooking
+    createBooking,
+    updateCustomerDetails
   };  

@@ -15,6 +15,7 @@ router.post("/createCustomer",bookingController.createCustomer);
 router.post('/createVehicle', bookingController.createVehicle); // New route for creating a vehicle
 router.post('/createBooking',bookingController.createBooking)
 router.get('/getCustomerDetails', bookingController.getCustomerDetails);
+router.put('/updateCustomer', bookingController.updateCustomerDetails);
 router.get('/getVehicleDetails', bookingController.getVehicleByRegistration);
 
 

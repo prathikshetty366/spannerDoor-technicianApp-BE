@@ -41,12 +41,9 @@ model Package {
 model Addons {
   id         String            @id @db.Uuid
   name       String
-  // packageId   String            @map(name: "packageId") @db.Uuid
-  // userPackage Package           @relation(fields: [packageId], references: [id])
   price      Int
   created_at DateTime?         @default(now()) @db.Timestamptz(6)
   updated_at DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
-  // bookings    ServiceBookings[]
   bookings   ServiceBookings[] @relation("ServiceBookingsToAddons")
 }
 
