@@ -164,18 +164,18 @@ async function createRole(req, res) {
   
 async function getCustomerDetails(req, res) {
   try {
-    const { phoneNumber } = req.query;
+    const { searchTerm } = req.query;
 
     let customerDetails;
 
 
-    if (phoneNumber) {
+    if (searchTerm) {
       // Fetch customer details based on partial name or phone number
       customerDetails = await prisma.customer.findMany({
         where: {
           OR: [
-            { phoneNumber: { contains: phoneNumber } },
-            { name: { contains: phoneNumber } },
+            { phoneNumber: { contains: searchTerm } },
+            { name: { contains: searchTerm } },
           ],
         },
         include: {
